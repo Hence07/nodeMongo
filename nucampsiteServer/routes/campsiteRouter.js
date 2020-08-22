@@ -8,13 +8,15 @@ const authenticate = require('../authenticate');
 campsiteRouter.use(bodyParser.json());
 
 campsiteRouter.route('/')
-.all((req, res, next) => {
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/plain');
-    next();
-})
-.get((req, res) => {
-    res.end('Will send all the campsites to you');
+.get((req, res, next) => {
+    Campsite.find()
+    .populate('comments.author')
+    .then(campsites => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(campsites);
+    })
+    .catch(err => next(err));
 })
 .post(authenticate.verifyUser, (req, res, next) => {
     res.end(`Will add the campsite: ${req.body.name} with description: ${req.body.description}`);
@@ -29,13 +31,15 @@ campsiteRouter.route('/')
 });
 
 campsiteRouter.route('/:campsiteId')
-.all((req, res, next) => {
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/plain');
-    next();
-})
-.get((req, res) => {
-    res.end(`Here your info: ${req.params.campsiteId} to you`);
+.get((req, res, next) => {
+    Campsite.findById(req.params.campsiteId)
+    .populate('comments.author')
+    .then(campsite => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(campsite);
+    })
+    .catch(err => next(err));
 })
 .post(authenticate.verifyUser, (req, res) => {
     res.end(`Will add the campsite: ${req.body.name.campsiteId} with description: ${req.body.description.campsiteId}`);
@@ -52,6 +56,7 @@ campsiteRouter.route('/:campsiteId')
 campsiteRouter.route('/:campsiteId/comments')
 .get((req, res, next) => {
     Campsite.findById(req.params.campsiteId)
+    .populate('comments.author')
     .then(campsite => {
         if (campsite) {
             res.statusCode = 200;
@@ -69,6 +74,7 @@ campsiteRouter.route('/:campsiteId/comments')
     Campsite.findById(req.params.campsiteId)
     .then(campsite => {
         if (campsite) {
+            req.body.author = req.user._id;
             campsite.comments.push(req.body);
             campsite.save()
             .then(campsite => {
@@ -112,9 +118,9 @@ campsiteRouter.route('/:campsiteId/comments')
     .catch(err => next(err));
 });
 
-campsiteRouter.route('/:campsiteId/comments/:commentId')
-.get((req, res, next) => {
+campsiteRouter.route('/:campsiteId/comments/:commentId').get((req, res, next) => {
     Campsite.findById(req.params.campsiteId)
+    .populate('comments.author')
     .then(campsite => {
         if (campsite && campsite.comments.id(req.params.commentId)) {
             res.statusCode = 200;
