@@ -30,7 +30,7 @@ const partnerSchema = new Schema({
         min: 0
     },
   
-    comments: [commentSchema]
+
 }, {
     timestamps: true
 });
