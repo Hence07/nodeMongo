@@ -2,6 +2,7 @@ const express = require('express');
 const passport = require('passport');
 const User = require('../models/user');
 const authenticate = require('../authenticate');
+const cors = require('./cors');
 
 
 const router = express.Router();
@@ -11,7 +12,7 @@ router.get('/', function(req, res, next) {
     res.send('respond with a resource');
 });
 
-router.post('/signup', (req, res) => {
+router.post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
   User.register(new User({username: req.body.username}),
   req.body.password, (err, user) => {
       if (err) {
@@ -42,7 +43,7 @@ router.post('/signup', (req, res) => {
   });
 });
 
-router.post('/login', passport.authenticate('local'), (req, res) => {
+router.post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
   const token = authenticate.getToken({_id: req.user._id});
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/json');
@@ -51,7 +52,8 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
 
 
 
-router.get('/logout', (req, res, next) => {
+router.options(cors.corsWithOptions, (req, res) => res.sendStatus(200))
+.get(cors.cors, (req, res, next) => {
     if (req.session) {
       req.session.destroy();
       res.clearCookie('session-id');

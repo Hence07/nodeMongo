@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const Partner = require('../models/partner');
 
 const partnerRouter = express.Router();
+const cors = require('./cors');
 
 partnerRouter.use(bodyParser.json());
 
@@ -41,12 +42,8 @@ partnerRouter.route('/partners')
 });
 
 partnerRouter.route('/partners/:partnerId')
-.all((req, res, next) => {
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/plain');
-    next();
-})
-.get((req, res, next) => {
+.options(cors.corsWithOptions, (req, res) => res.sendStatus(200))
+.get(cors.cors, (req, res, next) => {
     Partner.findById(req.params.partnerId)
     .then(campsite => {
         if (partner) {
@@ -61,11 +58,11 @@ partnerRouter.route('/partners/:partnerId')
     })
     .catch(err => next(err));
 })
-.post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
+.post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     res.statusCode = 403;
     res.end(`POST operation not supported on /partners/${req.params.partnerId}`);
 })
-.put(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+.put(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Partner.findByIdAndUpdate(req.params.partnerId, {
         $set: req.body
     }, {
@@ -78,7 +75,7 @@ partnerRouter.route('/partners/:partnerId')
         })
         .catch(err => next(err));
 })
-.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+.delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Partner.findByIdAndDelete(req.params.partnerId)
         .then(response => {
             res.statusCode = 200;
